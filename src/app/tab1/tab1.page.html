@@ -1,36 +1,25 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title class="ion-text-center">Chat Supabase</ion-title>
+    <ion-title>Blogs</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="logOut()" color="danger">
-        Salir
+      <ion-button (click)="openCreateBlogModal()">
+        Crear Blog
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  <ion-item lines="none" class="ion-padding-vertical" color="light">
-    <ion-label class="ion-text-center">
-      Conectado como: <strong>{{ user_sender }}</strong>
-    </ion-label>
-  </ion-item>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="chat-content">
-  <div class="messages-wrapper" #messagesWrapper>
-    <div *ngFor="let msg of messages" class="message animate__animated animate__fadeInUp">
-      <div class="message-meta">{{ msg.user_sender }}</div>
-      <div class="message-bubble">{{ msg.text }}</div>
-    </div>
-  </div>
+<ion-content class="ion-padding">
+  <ion-list>
+    <ion-card *ngFor="let blog of blogs" style="margin-bottom: 20px;">
+      <img *ngIf="blog.url_image_blog" [src]="blog.url_image_blog" alt="Imagen del blog" />
+      <ion-card-header>
+        <ion-card-title>{{ blog.name_blog }}</ion-card-title>
+        <ion-card-subtitle>Por: {{ blog.user_sender }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        {{ blog.text_blog }}
+      </ion-card-content>
+    </ion-card>
+  </ion-list>
 </ion-content>
-
-<ion-footer class="chat-footer">
-  <ion-toolbar>
-    <ion-item lines="none">
-      <ion-input [(ngModel)]="newMessage" placeholder="Escribe un mensaje..." class="message-input"
-        (keydown.enter)="sendeNewMessage()"></ion-input>
-      <ion-button (click)="sendeNewMessage()" color="primary" fill="solid" size="small" shape="round">
-        Enviar
-      </ion-button>
-    </ion-item>
-  </ion-toolbar>
-</ion-footer>

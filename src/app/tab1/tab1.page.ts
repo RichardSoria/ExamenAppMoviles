@@ -1,33 +1,34 @@
 import {
   Component,
   OnInit,
-  ViewChild,
-  ElementRef,
   AfterViewInit,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { SupabaseService, Message } from 'src/app/services/supabase.service';
+import { IonicModule, IonContent, ModalController } from '@ionic/angular';
+import { SupabaseService, Blog } from 'src/app/services/supabase.service';
 import { Router } from '@angular/router';
-import { IonicModule, IonContent } from '@ionic/angular';
+
+// Aquí asumo que crearás un componente Modal para crear blogs
+import { BlogCreateModalComponent } from '../modals/blog-create-modal/blog-create-modal.component'
 
 @Component({
-  selector: 'app-chat',
+  selector: 'app-blogs',
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule],
 })
 export class Tab1Page implements OnInit, AfterViewInit {
-  messages: Message[] = [];
-  newMessage: string = '';
+  blogs: Blog[] = [];
   user_sender: string = '';
 
   @ViewChild(IonContent, { static: false }) content!: IonContent;
 
   constructor(
     private supabaseService: SupabaseService,
-    private router: Router
+    private router: Router,
+    private modalCtrl: ModalController
   ) {
     this.supabaseService.currentUser.subscribe((user) => {
       this.user_sender = user?.email || '';
@@ -35,27 +36,31 @@ export class Tab1Page implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-    this.supabaseService.loadMessages().then(() => {
-      this.supabaseService.messages.subscribe((messages) => {
-        this.messages = messages;
+    this.supabaseService.loadBlogs().then(() => {
+      this.supabaseService.blogs.subscribe((blogs) => {
+        this.blogs = blogs;
         setTimeout(() => this.scrollToBottom(), 100);
       });
     });
-    this.supabaseService.listenToMessages();
+    this.supabaseService.listenToBlogs();
   }
 
   ngAfterViewInit() {
     window.addEventListener('keyboardDidShow', () => this.scrollToBottom());
   }
 
-  sendeNewMessage() {
-    if (this.newMessage.trim() !== '') {
-      this.supabaseService
-        .addMessage(this.newMessage, this.user_sender)
-        .then(() => {
-          this.newMessage = '';
-          setTimeout(() => this.scrollToBottom(), 100);
-        });
+  async openCreateBlogModal() {
+    const modal = await this.modalCtrl.create({
+      component: BlogCreateModalComponent,
+      componentProps: { user_sender: this.user_sender },
+    });
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+
+    if (data?.created) {
+      // Recarga blogs o agrega directamente si tu modal retorna el nuevo blog
+      await this.supabaseService.loadBlogs();
     }
   }
 

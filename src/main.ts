@@ -13,6 +13,12 @@ import { environment } from './environments/environment';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 
+// Solo si estás usando cámara en PWA (en navegador, no en Android/iOS nativo)
+import { defineCustomElements } from '@ionic/pwa-elements/loader';
+
+// Esto inicializa los elementos web necesarios como la cámara PWA
+defineCustomElements(window);
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideIonicAngular(),
@@ -20,6 +26,6 @@ bootstrapApplication(AppComponent, {
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
-    provideFirestore(() => getFirestore())
+    provideFirestore(() => getFirestore()),
   ],
 });

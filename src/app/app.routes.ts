@@ -18,7 +18,11 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'register',
+    loadComponent: () => import('./pages/register/register.page').then(m => m.RegisterPage)
+  },
+  {
     path: '**',
-    redirectTo: 'auth', // Por si escriben una ruta inválida
+    redirectTo: 'auth',
   },
 ];

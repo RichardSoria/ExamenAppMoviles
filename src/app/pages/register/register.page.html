@@ -1,0 +1,42 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Registro de Usuario</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <form (ngSubmit)="registrar()" #registerForm="ngForm">
+
+    <ion-item>
+      <ion-label position="floating">Nombre</ion-label>
+      <ion-input type="text" [(ngModel)]="nombre" name="nombre" required autocomplete="name"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Correo</ion-label>
+      <ion-input type="email" [(ngModel)]="correo" name="correo" required autocomplete="email"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Contraseña</ion-label>
+      <ion-input type="password" [(ngModel)]="password" name="password" required minlength="6"
+        autocomplete="new-password"></ion-input>
+    </ion-item>
+
+    <ion-item lines="none" class="ion-margin-top ion-justify-content-center">
+      <ion-button expand="block" (click)="tomarFoto()" type="button" color="primary" fill="outline">
+        <ion-icon slot="start" name="camera"></ion-icon>
+        Tomar Foto
+      </ion-button>
+    </ion-item>
+
+
+    <ion-button type="submit" expand="block" color="success" [disabled]="!registerForm.form.valid || !avatarFile"
+      class="ion-margin-top">
+      Registrarse
+    </ion-button>
+
+  </form>
+
+</ion-content>

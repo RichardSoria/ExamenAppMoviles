@@ -43,9 +43,15 @@ export class AuthPage implements OnInit {
     const loading = await this.loadingController.create();
     await loading.present();
 
+    if (this.credentials.invalid) {
+      await loading.dismiss();
+      this.showError("Formulario inválido", "Por favor, completa todos los campos correctamente.");
+      return;
+    }
+
     this.supabaseService.signIn(this.credentials.value).then(async (data) => {
       await loading.dismiss();
-      this.supabaseService.listenToMessages();
+      this.supabaseService.listenToBlogs();
       this.credentials.reset();
     }).catch(async (err) => {
       await loading.dismiss();
@@ -57,17 +63,11 @@ export class AuthPage implements OnInit {
     const loading = await this.loadingController.create();
     await loading.present();
 
-    this.supabaseService.signUp(this.credentials.value).then(async (data) => {
+    this.router.navigate(['/register']).then(() => {
+      loading.dismiss();
+    }).catch(async (err) => {
       await loading.dismiss();
-      this.showError("Registro exitoso", "Por favor, verifica tu correo electrónico para activar tu cuenta.");
-    }, async (err) => {
-      await loading.dismiss();
-      const alert = await this.alertController.create({
-        header: 'Error al registrarse',
-        message: err.message,
-        buttons: ['OK']
-      });
-      await alert.present();
+      this.showError("Error al registrar", err.message);
     });
   }
 

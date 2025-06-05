@@ -5,12 +5,15 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { DomSanitizer } from '@angular/platform-browser';
 
-const Messages_DB = 'messages';
+const Blogs_DB = 'blogs';
 const Archivos_DB = 'files';
 
-export interface Message {
-  text: string;
+export interface Blog {
+  id?: number;
+  name_blog: string;
   user_sender: string;
+  text_blog: string;
+  url_image_blog: string;
 }
 
 export interface FileInfo {
@@ -32,13 +35,13 @@ export interface FileItem {
   providedIn: 'root'
 })
 export class SupabaseService {
-  private _messages: BehaviorSubject<Message[]> = new BehaviorSubject<Message[]>([]);
+  private _blogs: BehaviorSubject<Blog[]> = new BehaviorSubject<Blog[]>([]);
   private _fileItems: BehaviorSubject<FileItem[]> = new BehaviorSubject<FileItem[]>([]);
   private _currentUser: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(null);
   private _userLoaded = new BehaviorSubject(false);
 
   private supabase: SupabaseClient;
-  private messageChannel: any = null;
+  private blogChannel: any = null;
 
   constructor(private router: Router, private sanitizer: DomSanitizer) {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, {
@@ -51,16 +54,16 @@ export class SupabaseService {
     this.supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         this._currentUser.next(session.user);
-        this.loadMessages();
-        this.listenToMessages();
+        this.loadBlogs();
+        this.listenToBlogs();
         this.loadFiles();
         this.router.navigate(['/tabs/tab1']);
       } else if (event === 'SIGNED_OUT') {
         this._currentUser.next(null);
         this.router.navigate(['/auth']);
-        this.unsubscribeFromMessages();
+        this.unsubscribeFromBlogs();
         this._fileItems.next([]);
-        this._messages.next([]);
+        this._blogs.next([]);
       }
     });
 
@@ -73,8 +76,8 @@ export class SupabaseService {
 
     if (data?.user) {
       this._currentUser.next(data.user);
-      this.loadMessages();
-      this.listenToMessages();
+      this.loadBlogs();
+      this.listenToBlogs();
       this.loadFiles();
     } else {
       this._currentUser.next(null);
@@ -96,78 +99,189 @@ export class SupabaseService {
     return this.supabase.auth.signInWithPassword(credentials);
   }
 
-  signUp(credentials: { email: string; password: string }) {
-    return this.supabase.auth.signUp(credentials);
+  async registerUser(name: string, email: string, password: string, url_image_user: string) {
+    // Registro con supabase.auth.signUp
+    const { data, error } = await this.supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data.user?.id) {
+      throw new Error('No se pudo obtener el ID del usuario registrado');
+    }
+
+    // Insertar datos adicionales en tabla 'users'
+    const { error: insertError } = await this.supabase
+      .from('users')
+      .insert({
+        userId: data.user.id,
+        name,
+        email,
+        url_image_user
+      });
+
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
   }
+
+  getPublicUrl(fileName: string): string {
+    return this.supabase.storage.from(Archivos_DB).getPublicUrl(fileName).data.publicUrl;
+  }
+
 
   signOut() {
     return this.supabase.auth.signOut();
   }
 
   // ******** Mensajes ********
-  get messages(): Observable<Message[]> {
-    return this._messages.asObservable();
+  get blogs(): Observable<Blog[]> {
+    return this._blogs.asObservable();
   }
 
-  async loadMessages() {
-    const { data, error } = await this.supabase.from(Messages_DB).select('*');
+  async loadBlogs() {
+    const { data, error } = await this.supabase.from(Blogs_DB).select('*').order('created_at', { ascending: true });
+
     if (error) {
-      console.error('Error al cargar mensajes:', error.message);
-      this._messages.next([]);
+      console.error('Error al cargar blogs:', error);
       return;
     }
-    this._messages.next(data || []);
+
+    this._blogs.next(data as Blog[]);
   }
 
-  listenToMessages() {
-    if (this.messageChannel) return;
-    this.messageChannel = this.supabase
-      .channel('messages-insert-channel')
+  // Escuchar nuevos blogs en tiempo real
+  listenToBlogs() {
+    if (this.blogChannel) return;
+
+    this.blogChannel = this.supabase
+      .channel('blogs-insert-channel')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: Messages_DB },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: Blogs_DB,
+        },
         (payload) => {
-          const newMessage = payload.new as Message;
-          const current = this._messages.getValue();
+          const newBlog = payload.new as Blog;
+          const current = this._blogs.getValue();
 
           const exists = current.some(
-            (m) => m.text === newMessage.text && m.user_sender === newMessage.user_sender
+            (b) => b.name_blog === newBlog.name_blog && b.text_blog === newBlog.text_blog
           );
 
           if (!exists) {
-            this._messages.next([...current, newMessage]);
+            this._blogs.next([...current, newBlog]);
           }
         }
       )
       .subscribe();
   }
 
-  unsubscribeFromMessages() {
-    if (this.messageChannel) {
-      this.supabase.removeChannel(this.messageChannel);
-      this.messageChannel = null;
+  // Dejar de escuchar blogs
+  unsubscribeFromBlogs() {
+    if (this.blogChannel) {
+      this.supabase.removeChannel(this.blogChannel);
+      this.blogChannel = null;
     }
   }
 
-  async addMessage(text: string, user_sender: string) {
-    const newMessage = { text, user_sender };
-    const { data, error } = await this.supabase.from(Messages_DB).insert(newMessage).select();
+  // Añadir un nuevo blog
+  async addBlog(name_blog: string, text_blog: string, url_image_blog: string, user_sender: string) {
+    const newBlog: Blog = { name_blog, text_blog, url_image_blog, user_sender };
+
+    const { data, error } = await this.supabase.from(Blogs_DB).insert(newBlog).select();
 
     if (error) {
-      console.error('Error insertando mensaje:', error);
+      console.error('Error insertando blog:', error);
       return;
     }
 
     if (data && data.length > 0) {
-      const current = this._messages.getValue();
-      this._messages.next([...current, data[0]]);
+      const current = this._blogs.getValue();
+      this._blogs.next([...current, data[0]]);
     }
   }
+
+  // Actualizar un blog existente
+  async updateBlog(id: number, changes: Partial<Blog>) {
+    const { data, error } = await this.supabase
+      .from(Blogs_DB)
+      .update(changes)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error actualizando blog:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const updated = data[0];
+      const current = this._blogs.getValue().map((b) => (b.id === id ? updated : b));
+      this._blogs.next(current);
+    }
+  }
+
+  async getCurrentUserData() {
+    const { data: authData, error: authError } = await this.supabase.auth.getUser();
+
+    if (!authData?.user?.email) {
+      throw new Error('Usuario no autenticado');
+    }
+    const userEmail = authData.user.email;
+
+    const { data: userData, error: userError } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('email', userEmail)
+      .single();
+
+    if (userError || !userData) {
+      throw new Error('No se pudo encontrar al usuario en la base de datos');
+    }
+
+    return userData;
+  }
+
 
   // ******** Archivos ********
   getFileItems(): Observable<FileItem[]> {
     return this._fileItems.asObservable();
   }
+
+  async uploadFilePublic(file: File): Promise<string> {
+    const fileName = `avatar_${Date.now()}_${file.name}`;
+
+    const { error } = await this.supabase.storage
+      .from(Archivos_DB)
+      .upload(fileName, file, {
+        upsert: false,
+        cacheControl: '3600'
+      });
+
+    if (error) {
+      console.error('Error al subir archivo:', error.message);
+      throw new Error('Error al subir el archivo');
+    }
+
+    const { data: publicUrlData } = this.supabase
+      .storage
+      .from(Archivos_DB)
+      .getPublicUrl(fileName);
+
+    if (!publicUrlData.publicUrl) {
+      throw new Error('No se pudo obtener la URL pública');
+    }
+
+    return publicUrlData.publicUrl;
+  }
+
 
   async uploadFile(file: File, info: FileInfo): Promise<string> {
     const time = Date.now();

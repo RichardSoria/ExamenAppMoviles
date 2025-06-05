@@ -1,0 +1,30 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Crear Blog</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="close()">Cancelar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item>
+    <ion-label position="floating">Título</ion-label>
+    <ion-input [(ngModel)]="name_blog"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="floating">Contenido</ion-label>
+    <ion-textarea [(ngModel)]="text_blog"></ion-textarea>
+  </ion-item>
+
+  <ion-item lines="none">
+    <ion-button expand="block" (click)="tomarFoto()">Tomar Foto</ion-button>
+  </ion-item>
+
+  <ion-item *ngIf="url_image_blog" lines="none">
+    <img [src]="url_image_blog" alt="Foto tomada" style="width: 100%; border-radius: 8px;" />
+  </ion-item>
+
+  <ion-button expand="block" (click)="createBlog()">Crear</ion-button>
+</ion-content>
