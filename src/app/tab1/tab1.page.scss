@@ -1,0 +1,36 @@
+.chat-content {
+    --padding-bottom: 70px;
+    /* Ajuste para dejar espacio al footer */
+}
+
+.messages-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 16px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.message {
+    background: var(--ion-color-light);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+    word-wrap: break-word;
+    font-size: 1rem;
+    color: var(--ion-color-dark);
+}
+
+.message-meta {
+    font-weight: bold;
+    color: var(--ion-color-primary);
+    margin-bottom: 4px;
+}
+
+.chat-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 10;
+}

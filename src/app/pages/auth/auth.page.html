@@ -1,0 +1,34 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+
+<ion-content fullscreen class="ion-padding">
+
+
+  <div class="ion-padding"
+    style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;"
+    [formGroup]="credentials">
+
+    <!-- Contenido del formulario -->
+    <div style="width: 100%; max-width: 400px;">
+      <ion-input formControlName="email" placeholder="Email" type="email" autocomplete="email" autocapitalize="off"
+        class="input-field ion-margin-bottom"></ion-input>
+
+      <ion-input formControlName="password" name="password" type="password" placeholder="Password"
+        autocomplete="current-password" class="input-field ion-margin-bottom"></ion-input>
+
+      <ion-button expand="block" color="primary" class="btn-login ion-margin-bottom" (click)="login()">
+        Iniciar Sesión
+      </ion-button>
+
+      <ion-button expand="block" color="secondary" (click)="register()" class="btn-register ion-margin-bottom">
+        Registrarse
+      </ion-button>
+    </div>
+
+  </div>
+
+</ion-content>
